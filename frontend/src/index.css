@@ -1,0 +1,74 @@
+@import 'tailwindcss';
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-ring: hsl(var(--ring));
+}
+
+@layer base {
+  :root {
+    --background: 240 10% 4%;
+    --foreground: 0 0% 95%;
+    --card: 240 6% 8%;
+    --card-foreground: 0 0% 95%;
+    --muted: 240 4% 14%;
+    --muted-foreground: 240 5% 58%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --primary: 142 76% 42%;
+    --primary-foreground: 144 80% 10%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --accent: 240 4% 14%;
+    --accent-foreground: 0 0% 95%;
+    --ring: 142 76% 42%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+}
+
+@layer utilities {
+  @keyframes news-marquee {
+    0% {
+      transform: translateX(100vw);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+
+  .news-marquee-text {
+    display: inline-block;
+    min-width: max-content;
+    will-change: transform;
+    animation: news-marquee 18s linear infinite;
+  }
+
+  .flash-up {
+    @apply bg-emerald-500/25;
+  }
+
+  .flash-down {
+    @apply bg-red-500/25;
+  }
+}

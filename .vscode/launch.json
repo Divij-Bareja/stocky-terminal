@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Trading Simulator (Spring Boot)",
+      "request": "launch",
+      "mainClass": "com.stocky.tradingsimulator.TradingSimulatorApplication",
+      "projectName": "trading-simulator",
+      "env": {
+        "FINNHUB_API_KEY": "${env:FINNHUB_API_KEY}",
+        "JWT_SECRET": "${env:JWT_SECRET}",
+        "DB_PASSWORD": "${env:DB_PASSWORD}"
+      }
+    }
+  ]
+}
