@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { buyStock, sellStock } from '@/services/tradeService.js';
+import { loginUser, registerUser } from '@/services/authService.js';
 import { useMarketData } from '@/hooks/useMarketData';
 import { useAuth } from '@/context/AuthContext.jsx';
 import TerminalLayout from '@/components/layout/TerminalLayout';
@@ -30,9 +31,20 @@ function deriveDisplayName(emailOrUsername) {
   return emailOrUsername;
 }
 
+function createGuestCredentials() {
+  const timestamp = Date.now();
+  const nonce = Math.random().toString(36).slice(2, 8);
+  return {
+    email: `guest-${timestamp}-${nonce}@stocky.local`,
+    password: `Guest-${timestamp}-${nonce}`,
+  };
+}
+
 export default function Dashboard() {
   const { user, isAuthenticated, login, logout } = useAuth();
   const [authModal, setAuthModal] = useState(isAuthenticated ? null : 'login');
+  const [guestSubmitting, setGuestSubmitting] = useState(false);
+  const [guestError, setGuestError] = useState(null);
   const {
     stocks,
     portfolio,
@@ -79,6 +91,22 @@ export default function Dashboard() {
     login(authResponse.token, toAuthUser(authResponse));
     setAuthModal(null);
   }, [login]);
+
+  const handleGuestExplore = useCallback(async () => {
+    setGuestError(null);
+    setGuestSubmitting(true);
+    try {
+      const { email: guestEmail, password: guestPassword } = createGuestCredentials();
+      await registerUser(guestEmail, guestPassword);
+      const authResponse = await loginUser(guestEmail, guestPassword);
+      handleAuthSuccess(authResponse);
+    } catch (err) {
+      const message = err.response?.data?.message ?? err.message ?? 'Unable to create a guest session.';
+      setGuestError(message);
+    } finally {
+      setGuestSubmitting(false);
+    }
+  }, [handleAuthSuccess]);
 
   const handleLogout = useCallback(() => {
     logout();
@@ -151,11 +179,38 @@ export default function Dashboard() {
             <p className="mt-3 text-sm text-muted-foreground">
               Sign in to access your live portfolio, place trades, and monitor market events.
             </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Button onClick={() => setAuthModal('login')}>Log in</Button>
-              <Button variant="outline" onClick={() => setAuthModal('register')}>
-                Register
+            <div className="mt-6 space-y-3">
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Button
+                  onClick={() => {
+                    setGuestError(null);
+                    setAuthModal('login');
+                  }}
+                  disabled={guestSubmitting}
+                >
+                  Log in
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setGuestError(null);
+                    setAuthModal('register');
+                  }}
+                  disabled={guestSubmitting}
+                >
+                  Register
+                </Button>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-emerald-400/40 bg-emerald-950/40 text-emerald-100 hover:bg-emerald-900/60"
+                onClick={handleGuestExplore}
+                disabled={guestSubmitting}
+              >
+                {guestSubmitting ? 'Creating Sandbox...' : 'Explore as Guest'}
               </Button>
+              {guestError && <p className="text-sm text-destructive">{guestError}</p>}
             </div>
           </div>
         </div>
