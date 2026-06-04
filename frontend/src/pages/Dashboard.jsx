@@ -42,7 +42,7 @@ function createGuestCredentials() {
 
 export default function Dashboard() {
   const { user, isAuthenticated, login, logout } = useAuth();
-  const [authModal, setAuthModal] = useState(isAuthenticated ? null : 'login');
+  const [authModal, setAuthModal] = useState(null);
   const [guestSubmitting, setGuestSubmitting] = useState(false);
   const [guestError, setGuestError] = useState(null);
   const {
