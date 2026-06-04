@@ -1,13 +1,22 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { registerUser } from '@/services/authService';
+import { loginUser, registerUser } from '@/services/authService';
 
 function getErrorMessage(err, fallback) {
   if (err.code === 'ERR_NETWORK') {
     return 'Cannot reach server. Start backend on port 8080 and restart frontend.';
   }
   return err.response?.data?.message ?? err.message ?? fallback;
+}
+
+function createGuestCredentials() {
+  const timestamp = Date.now();
+  const nonce = Math.random().toString(36).slice(2, 8);
+  return {
+    email: `guest-${timestamp}-${nonce}@stocky.local`,
+    password: `Guest-${timestamp}-${nonce}`,
+  };
 }
 
 export default function RegisterModal({
@@ -21,18 +30,20 @@ export default function RegisterModal({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [guestSubmitting, setGuestSubmitting] = useState(false);
+  const isBusy = submitting || guestSubmitting;
 
   useEffect(() => {
     if (!open) return undefined;
 
     const onKeyDown = (event) => {
-      if (event.key === 'Escape' && !submitting) {
+      if (event.key === 'Escape' && !isBusy) {
         onClose();
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [open, onClose, submitting]);
+  }, [open, onClose, isBusy]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -65,6 +76,21 @@ export default function RegisterModal({
     }
   };
 
+  const handleGuestExplore = async () => {
+    setError(null);
+    setGuestSubmitting(true);
+    try {
+      const { email: guestEmail, password: guestPassword } = createGuestCredentials();
+      await registerUser(guestEmail, guestPassword);
+      const authResponse = await loginUser(guestEmail, guestPassword);
+      onSuccess(authResponse);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Unable to create a guest session. Please try again.'));
+    } finally {
+      setGuestSubmitting(false);
+    }
+  };
+
   if (!open) return null;
 
   return (
@@ -72,9 +98,9 @@ export default function RegisterModal({
       <button
         type="button"
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-        onClick={submitting ? undefined : onClose}
+        onClick={isBusy ? undefined : onClose}
         aria-label="Close register modal"
-        disabled={submitting}
+        disabled={isBusy}
       />
 
       <div className="relative w-full max-w-md rounded-2xl border border-border bg-card/95 p-6 shadow-2xl shadow-black/40">
@@ -97,7 +123,7 @@ export default function RegisterModal({
               placeholder="you@example.com"
               autoComplete="email"
               required
-              disabled={submitting}
+              disabled={isBusy}
               autoFocus
             />
           </div>
@@ -114,7 +140,7 @@ export default function RegisterModal({
               placeholder="Create a password"
               autoComplete="new-password"
               required
-              disabled={submitting}
+              disabled={isBusy}
             />
           </div>
 
@@ -130,14 +156,24 @@ export default function RegisterModal({
               placeholder="Repeat password"
               autoComplete="new-password"
               required
-              disabled={submitting}
+              disabled={isBusy}
             />
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <Button type="submit" className="w-full" disabled={submitting}>
+          <Button type="submit" className="w-full" disabled={isBusy}>
             {submitting ? 'Creating account…' : 'Register'}
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full border-emerald-400/40 bg-emerald-950/40 text-emerald-100 hover:bg-emerald-900/60"
+            onClick={handleGuestExplore}
+            disabled={isBusy}
+          >
+            {guestSubmitting ? 'Creating Sandbox...' : 'Explore as Guest'}
           </Button>
         </form>
 
@@ -147,7 +183,7 @@ export default function RegisterModal({
             type="button"
             className="font-medium text-emerald-400 hover:text-emerald-300"
             onClick={onSwitchToLogin}
-            disabled={submitting}
+            disabled={isBusy}
           >
             Log in
           </button>
